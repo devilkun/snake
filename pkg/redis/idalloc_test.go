@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/go-redis/redis"
+	"github.com/redis/go-redis/v9"
 )
 
 func TestNew(t *testing.T) {
@@ -89,6 +89,7 @@ func TestIdAlloc_GetKey(t *testing.T) {
 	}
 }
 
+// nolint
 func TestIdAlloc_GetNewID(t *testing.T) {
 	type fields struct {
 		key         string

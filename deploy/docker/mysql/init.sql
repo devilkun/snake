@@ -1,11 +1,16 @@
 use mysql;
 ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'root';
 GRANT ALL ON *.* to root@'%' IDENTIFIED BY 'root';
+
+# create test_user
+CREATE USER 'test_user'@'%' IDENTIFIED BY '123456';
+GRANT ALL ON *.* to test_user@'%' IDENTIFIED BY '123456';
+
 FLUSH PRIVILEGES;
 
 -- 创建数据库
-CREATE DATABASE IF NOT EXISTS `snake`;
-USE `snake`;
+CREATE DATABASE IF NOT EXISTS `eagle`;
+USE `eagle`;
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;

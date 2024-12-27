@@ -1,22 +1,23 @@
 package server
 
 import (
-	"github.com/1024casts/snake/internal/routers"
-	"github.com/1024casts/snake/internal/service"
-	"github.com/1024casts/snake/pkg/conf"
-	"github.com/1024casts/snake/pkg/transport/http"
+	"github.com/go-eagle/eagle/internal/routers"
+	"github.com/go-eagle/eagle/pkg/app"
+	"github.com/go-eagle/eagle/pkg/transport/http"
 )
 
-// NewHttpServer creates a HTTP server
-func NewHttpServer(c *conf.Config, svc *service.Service) *http.Server {
+// NewHTTPServer creates a HTTP server
+func NewHTTPServer(c *app.ServerConfig) *http.Server {
 	router := routers.NewRouter()
 
-	var opts []http.ServerOption
-	if c.Http.Addr != "" {
-		opts = append(opts, http.Address(c.Http.Addr))
-	}
-	srv := http.NewServer(opts...)
+	srv := http.NewServer(
+		http.WithAddress(c.Addr),
+		http.WithReadTimeout(c.ReadTimeout),
+		http.WithWriteTimeout(c.WriteTimeout),
+	)
+
 	srv.Handler = router
+	// NOTE: register svc to http server
 
 	return srv
 }
