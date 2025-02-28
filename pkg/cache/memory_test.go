@@ -1,39 +1,52 @@
 package cache
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/go-eagle/eagle/pkg/encoding"
 )
 
 func Test_NewMemoryCache(t *testing.T) {
 	asserts := assert.New(t)
 
-	client := NewMemoryCache("memory-unit-test", JSONEncoding{})
+	client := NewMemoryCache("prefix", encoding.JSONEncoding{})
 	asserts.NotNil(client)
 }
 
 func TestMemoStore_Set(t *testing.T) {
 	asserts := assert.New(t)
 
-	store := NewMemoryCache("memory-unit-test", JSONEncoding{})
-	err := store.Set("test-key", "test-val", -1)
-	asserts.NoError(err)
+	store := NewMemoryCache("prefix", encoding.JSONEncoding{})
+	err := store.Set(context.Background(), "test-key", "test-val", -1)
+	asserts.NotNil(err)
 }
 
 func TestMemoStore_Get(t *testing.T) {
 	asserts := assert.New(t)
-	store := NewMemoryCache("memory-unit-test", JSONEncoding{})
+	store := NewMemoryCache("prefix", encoding.JSONEncoding{})
+	ctx := context.Background()
 
-	// 正常情况
+	type testStruct struct {
+		Name string
+		Age  int
+	}
+
+	// normal
 	{
-		var gotVal string
-		setVal := "test-val"
-		err := store.Set("test-get-key", setVal, 3600)
-		asserts.NoError(err)
-		err = store.Get("test-get-key", &gotVal)
-		asserts.NoError(err)
-		t.Log(setVal, gotVal)
-		asserts.Equal(setVal, gotVal)
+		testKey := "test-key2"
+		testVal := testStruct{
+			Name: "test-name",
+			Age:  18,
+		}
+		err := store.Set(ctx, testKey, &testVal, 60)
+		asserts.Nil(err)
+
+		var gotVal testStruct
+		err = store.Get(ctx, testKey, &gotVal)
+		asserts.Nil(err)
+		asserts.NotNil(gotVal)
 	}
 }

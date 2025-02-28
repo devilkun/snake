@@ -1,12 +1,12 @@
 package user
 
 import (
-	"github.com/1024casts/snake/internal/ecode"
-	"github.com/1024casts/snake/internal/service"
 	"github.com/gin-gonic/gin"
 
-	"github.com/1024casts/snake/pkg/errno"
-	"github.com/1024casts/snake/pkg/log"
+	"github.com/go-eagle/eagle/internal/ecode"
+	"github.com/go-eagle/eagle/internal/service"
+	"github.com/go-eagle/eagle/pkg/errcode"
+	"github.com/go-eagle/eagle/pkg/log"
 )
 
 // Register 注册
@@ -22,7 +22,7 @@ func Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Warnf("register bind param err: %v", err)
-		response.Error(c, errno.ErrBind)
+		response.Error(c, errcode.ErrInvalidParam)
 		return
 	}
 
@@ -30,7 +30,7 @@ func Register(c *gin.Context) {
 	// check param
 	if req.Username == "" || req.Email == "" || req.Password == "" {
 		log.Warnf("params is empty: %v", req)
-		response.Error(c, errno.ErrInvalidParam)
+		response.Error(c, errcode.ErrInvalidParam)
 		return
 	}
 
@@ -41,10 +41,10 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	err := service.UserSvc.Register(c, req.Username, req.Email, req.Password)
+	err := service.Svc.Users().Register(c, req.Username, req.Email, req.Password)
 	if err != nil {
 		log.Warnf("register err: %v", err)
-		response.Error(c, ecode.ErrRegisterFailed)
+		response.Error(c, ecode.ErrRegisterFailed.WithDetails(err.Error()))
 		return
 	}
 

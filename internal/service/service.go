@@ -1,10 +1,11 @@
 package service
 
 import (
-	"github.com/1024casts/snake/internal/dao"
-	"github.com/1024casts/snake/internal/model"
-	"github.com/1024casts/snake/pkg/conf"
+	"github.com/go-eagle/eagle/internal/repository"
 )
+
+// Svc global var
+var Svc Service
 
 const (
 	// DefaultLimit 默认分页数
@@ -17,35 +18,38 @@ const (
 	DefaultAvatar = "default_avatar.png"
 )
 
-var (
-	UserSvc  *Service
-	VCodeSvc *Service
-)
+// Service define all service
+type Service interface {
+	Users() UserService
+	Relations() RelationService
+	SMS() SMSService
+	VCode() VCodeService
+}
 
-// Service struct
-type Service struct {
-	c   *conf.Config
-	dao *dao.Dao
+// service struct
+type service struct {
+	repo repository.Repository
 }
 
 // New init service
-func New(c *conf.Config) (s *Service) {
-	db := model.GetDB()
-	s = &Service{
-		c:   c,
-		dao: dao.New(db),
+func New(repo repository.Repository) Service {
+	return &service{
+		repo: repo,
 	}
-	UserSvc = s
-	VCodeSvc = s
-	return s
 }
 
-// Ping service
-func (s *Service) Ping() error {
-	return nil
+func (s *service) Users() UserService {
+	return newUsers(s)
 }
 
-// Close service
-func (s *Service) Close() {
-	s.dao.Close()
+func (s *service) Relations() RelationService {
+	return newRelations(s)
+}
+
+func (s *service) SMS() SMSService {
+	return newSMS(s)
+}
+
+func (s *service) VCode() VCodeService {
+	return newVCode(s)
 }

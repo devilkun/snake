@@ -5,64 +5,56 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/1024casts/snake/pkg/log"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 
-	"github.com/opentracing/opentracing-go/ext"
-
-	"github.com/opentracing/opentracing-go"
-
-	"github.com/1024casts/snake/internal/model"
-	"github.com/1024casts/snake/pkg/cache"
-	"github.com/1024casts/snake/pkg/redis"
+	"github.com/go-eagle/eagle/internal/model"
+	"github.com/go-eagle/eagle/pkg/cache"
+	"github.com/go-eagle/eagle/pkg/encoding"
+	"github.com/go-eagle/eagle/pkg/log"
+	"github.com/go-eagle/eagle/pkg/redis"
 )
 
 const (
 	// PrefixUserBaseCacheKey cache前缀, 规则：业务+模块+{ID}
-	PrefixUserBaseCacheKey = "snake:user:base:%d"
+	PrefixUserBaseCacheKey = "eagle:user:base:%d"
 )
 
 // Cache cache
 type Cache struct {
-	cache cache.Driver
-	//localCache cache.Driver
+	cache  cache.Cache
+	tracer trace.Tracer
+	//localCache cache.Cache
 }
 
 // NewUserCache new一个用户cache
 func NewUserCache() *Cache {
-	encoding := cache.JSONEncoding{}
+	jsonEncoding := encoding.JSONEncoding{}
 	cachePrefix := ""
 	return &Cache{
-		cache: cache.NewRedisCache(redis.RedisClient, cachePrefix, encoding, func() interface{} {
+		cache: cache.NewRedisCache(redis.RedisClient, cachePrefix, jsonEncoding, func() interface{} {
 			return &model.UserBaseModel{}
-		}),
+		},
+		),
+		tracer: otel.Tracer("user cache"),
 	}
 }
 
-func getCacheClient(ctx context.Context) cache.Driver {
-	encoding := cache.JSONEncoding{}
-	cachePrefix := ""
-	client := cache.NewRedisCache(redis.WrapRedisClient(ctx, redis.RedisClient), cachePrefix, encoding, func() interface{} {
-		return &model.UserBaseModel{}
-	})
-
-	return client
-}
-
 // GetUserBaseCacheKey 获取cache key
-func (u *Cache) GetUserBaseCacheKey(userID uint64) string {
+func (c *Cache) GetUserBaseCacheKey(userID uint64) string {
 	return fmt.Sprintf(PrefixUserBaseCacheKey, userID)
 }
 
 // SetUserBaseCache 写入用户cache
-func (u *Cache) SetUserBaseCache(ctx context.Context, userID uint64, user *model.UserBaseModel, duration time.Duration) error {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "cache.SetUserBaseCache")
-	defer span.Finish()
+func (c *Cache) SetUserBaseCache(ctx context.Context, userID uint64, user *model.UserBaseModel, duration time.Duration) error {
+	ctx, span := c.tracer.Start(ctx, "SetUserBaseCache")
+	defer span.End()
 
 	if user == nil || user.ID == 0 {
 		return nil
 	}
-	cacheKey := fmt.Sprintf(PrefixUserBaseCacheKey, userID)
-	err := u.cache.Set(cacheKey, user, duration)
+	cacheKey := c.GetUserBaseCacheKey(userID)
+	err := c.cache.Set(ctx, cacheKey, user, duration)
 	if err != nil {
 		return err
 	}
@@ -70,35 +62,35 @@ func (u *Cache) SetUserBaseCache(ctx context.Context, userID uint64, user *model
 }
 
 // GetUserBaseCache 获取用户cache
-func (u *Cache) GetUserBaseCache(ctx context.Context, userID uint64) (data *model.UserBaseModel, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "cache.GetUserBaseCache")
-	defer span.Finish()
+func (c *Cache) GetUserBaseCache(ctx context.Context, userID uint64) (data *model.UserBaseModel, err error) {
+	ctx, span := c.tracer.Start(ctx, "GetUserBaseCache")
+	defer span.End()
+
 	client := getCacheClient(ctx)
 
-	cacheKey := fmt.Sprintf(PrefixUserBaseCacheKey, userID)
+	cacheKey := c.GetUserBaseCacheKey(userID)
 	//err = u.cache.Get(cacheKey, &data)
-	err = client.Get(cacheKey, &data)
+	err = client.Get(ctx, cacheKey, &data)
 	if err != nil {
-		if span := opentracing.SpanFromContext(ctx); span != nil {
-			ext.Error.Set(span, true)
-		}
-		log.Trace(ctx).Warnf("get err from redis, err: %+v", err)
+		log.WithContext(ctx).Warnf("get err from redis, err: %+v", err)
 		return nil, err
 	}
 	return data, nil
 }
 
 // MultiGetUserBaseCache 批量获取用户cache
-func (u *Cache) MultiGetUserBaseCache(ctx context.Context, userIDs []uint64) (map[string]*model.UserBaseModel, error) {
+func (c *Cache) MultiGetUserBaseCache(ctx context.Context, userIDs []uint64) (map[string]*model.UserBaseModel, error) {
+	ctx, span := c.tracer.Start(ctx, "MultiGetUserBaseCache")
+	defer span.End()
 	var keys []string
 	for _, v := range userIDs {
-		cacheKey := fmt.Sprintf(PrefixUserBaseCacheKey, v)
+		cacheKey := c.GetUserBaseCacheKey(v)
 		keys = append(keys, cacheKey)
 	}
 
 	// 需要在这里make实例化，如果在返回参数里直接定义会报 nil map
 	userMap := make(map[string]*model.UserBaseModel)
-	err := u.cache.MultiGet(keys, userMap)
+	err := c.cache.MultiGet(ctx, keys, userMap)
 	if err != nil {
 		return nil, err
 	}
@@ -106,19 +98,23 @@ func (u *Cache) MultiGetUserBaseCache(ctx context.Context, userIDs []uint64) (ma
 }
 
 // DelUserBaseCache 删除用户cache
-func (u *Cache) DelUserBaseCache(ctx context.Context, userID uint64) error {
-	cacheKey := fmt.Sprintf(PrefixUserBaseCacheKey, userID)
-	err := u.cache.Del(cacheKey)
+func (c *Cache) DelUserBaseCache(ctx context.Context, userID uint64) error {
+	ctx, span := c.tracer.Start(ctx, "DelUserBaseCache")
+	defer span.End()
+	cacheKey := c.GetUserBaseCacheKey(userID)
+	err := c.cache.Del(ctx, cacheKey)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// DelUserBaseCache 删除用户cache
-func (u *Cache) SetCacheWithNotFound(ctx context.Context, userID uint64) error {
-	cacheKey := fmt.Sprintf(PrefixUserBaseCacheKey, userID)
-	err := u.cache.SetCacheWithNotFound(cacheKey)
+// SetCacheWithNotFound .
+func (c *Cache) SetCacheWithNotFound(ctx context.Context, userID uint64) error {
+	ctx, span := c.tracer.Start(ctx, "SetCacheWithNotFound")
+	defer span.End()
+	cacheKey := c.GetUserBaseCacheKey(userID)
+	err := c.cache.SetCacheWithNotFound(ctx, cacheKey)
 	if err != nil {
 		return err
 	}
