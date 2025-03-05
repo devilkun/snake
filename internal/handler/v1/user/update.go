@@ -3,13 +3,13 @@ package user
 import (
 	"context"
 
-	"github.com/1024casts/snake/internal/service"
+	"github.com/go-eagle/eagle/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 
-	"github.com/1024casts/snake/pkg/errno"
-	"github.com/1024casts/snake/pkg/log"
+	"github.com/go-eagle/eagle/pkg/errcode"
+	"github.com/go-eagle/eagle/pkg/log"
 )
 
 // Update 更新用户信息
@@ -30,7 +30,7 @@ func Update(c *gin.Context) {
 	var req UpdateRequest
 	if err := c.Bind(&req); err != nil {
 		log.Warnf("bind request param err: %+v", err)
-		response.Error(c, errno.ErrBind)
+		response.Error(c, errcode.ErrInvalidParam)
 		return
 	}
 	log.Infof("user update req: %#v", req)
@@ -38,10 +38,10 @@ func Update(c *gin.Context) {
 	userMap := make(map[string]interface{})
 	userMap["avatar"] = req.Avatar
 	userMap["sex"] = req.Sex
-	err := service.UserSvc.UpdateUser(context.TODO(), userID, userMap)
+	err := service.Svc.Users().UpdateUser(context.TODO(), userID, userMap)
 	if err != nil {
 		log.Warnf("[user] update user err, %v", err)
-		response.Error(c, errno.ErrInternalServerError)
+		response.Error(c, errcode.ErrInternalServer)
 		return
 	}
 

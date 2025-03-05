@@ -1,6 +1,8 @@
 package service
 
-import "testing"
+import (
+	"testing"
+)
 
 func Test_smsService_Send(t *testing.T) {
 	type args struct {
@@ -18,7 +20,7 @@ func Test_smsService_Send(t *testing.T) {
 	s := New(nil)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := s.SendSMS(tt.args.phoneNumber, tt.args.verifyCode); (err != nil) != tt.wantErr {
+			if err := s.SMS().SendSMS(tt.args.phoneNumber, tt.args.verifyCode); (err != nil) != tt.wantErr {
 				t.Errorf("Send() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

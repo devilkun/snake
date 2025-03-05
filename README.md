@@ -1,250 +1,136 @@
-# 🐍 snake
+# 🦅 eagle
 
- [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/1024casts/snake/Go?style=flat-square)](https://github.com/1024casts/snake)
- [![codecov](https://codecov.io/gh/1024casts/snake/branch/master/graph/badge.svg)](https://codecov.io/gh/1024casts/snake)
+ [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/go-eagle/eagle/test.yml?branch=master&style=flat-square)](https://github.com/go-eagle/eagle)
+ [![codecov](https://codecov.io/gh/go-eagle/eagle/branch/master/graph/badge.svg)](https://codecov.io/gh/go-eagle/eagle)
  [![GolangCI](https://golangci.com/badges/github.com/golangci/golangci-lint.svg)](https://golangci.com)
- [![godoc](https://godoc.org/github.com/1024casts/snake?status.svg)](https://godoc.org/github.com/1024casts/snake)
+ [![godoc](https://godoc.org/github.com/go-eagle/eagle?status.svg)](https://godoc.org/github.com/go-eagle/eagle)
+ [![Gitter](https://badges.gitter.im/go-eagle/eagle.svg)](https://gitter.im/go-eagle/eagle?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
  <a href="http://opentracing.io"><img src="https://img.shields.io/badge/OpenTracing-enabled-blue.svg" alt="OpenTracing Badge"></a>
- [![Go Report Card](https://goreportcard.com/badge/github.com/1024casts/snake)](https://goreportcard.com/report/github.com/1024casts/snake)
+ [![Go Report Card](https://goreportcard.com/badge/github.com/go-eagle/eagle)](https://goreportcard.com/report/github.com/go-eagle/eagle)
  [![gitmoji](https://img.shields.io/badge/gitmoji-%20%F0%9F%98%9C%20%F0%9F%98%8D-FFDD67.svg?style=flat-square)](https://github.com/carloscuesta/gitmoji)
- [![License](https://img.shields.io/github/license/1024casts/snake?style=flat-square)](/LICENSE)
+ [![License](https://img.shields.io/github/license/go-eagle/eagle?style=flat-square)](/LICENSE)
 
-一款适合于快速开发业务的 Go 框架，可快速构建 API 服务 或 Web 网站。
+A Go framework suitable for rapid business development, which can quickly build API services or Web sites.   
+English | [中文文档](https://github.com/go-eagle/eagle/blob/master/README_ZH.md)
 
-**Pro Tip:** 每个目录下基本都有 `README`，可以让框架使用起来更轻松 ^_^
+## Features
 
-## 设计思想和原则
+- API framework [gin](https://github.com/gin-gonic/gin) 
+- RPC framework [gRPC](https://github.com/grpc/grpc-go)
+- Configuration [viper](https://github.com/spf13/viper)
+- Logging component [zap](https://github.com/uber-go/zap)
+- Database ORM component [gorm](https://github.com/go-gorm/gorm) | [MongoDB](https://github.com/mongodb/mongo-go-driver)
+- Search component [Elasticsearch](https://github.com/elastic/go-elasticsearch)
+- Cache component [go-redis](https://github.com/go-redis/redis), [ristretto](https://github.com/dgraph-io/ristretto)
+- Message Queue [Rabbitmq](https://github.com/rabbitmq/amqp091-go) | [redis](https://github.com/hibiken/asynq)
+- Authentication [JWT](https://jwt.io/) 
+- Parameter Validator [validator](https://github.com/go-playground/validator)
+- Scheduled tasks [cron](https://github.com/robfig/cron)
+- Metrics monitoring [prometheus](https://github.com/prometheus/client_golang/prometheus), [grafana](https://github.com/grafana/grafana)
+- Distributed Tracing [opentelemetry](https://github.com/open-telemetry/opentelemetry-go)
+- Service registration and discovery [etcd](https://github.com/etcd-io/etcd) | [consul](https://github.com/hashicorp/consul) | [nacos](https://github.com/alibaba/nacos)
+- Unit Test [GoConvey](https://github.com/smartystreets/goconvey)
+- Lint [GolangCI-lint](https://golangci.com/)
+- CI/CD [GitHub Actions](https://github.com/actions), [docker](https://www.docker.com/), [kubernetes](https://github.com/kubernetes/kubernetes)
 
-框架中用到的设计思想和原则，尽量满足 "高内聚、低耦合"，主要遵从下面几个原则
-- 1. 单一职责原则
-- 2. 基于接口而非实现编程
-- 3. 依赖注入
-- 4. 多用组合
-- 5. 迪米特法则
+## Framework Layered Architecture
+![eagle-framework-diagram](https://github.com/go-eagle/eagle/assets/3043638/cd05f6d5-058c-4ab0-87ee-47148e0c68aa)
 
-> 迪米特法则: 不该有直接依赖关系的类之间，不要有依赖；有依赖关系的类之间，尽量只依赖必要的接口
+## Logic Layered Architecture
 
-## ✨ 技术栈
+Eagle utilizes a classic layered structure and employs the Wire dependency injection framework to enhance modularity and reduce coupling between components.
 
-- 框架路由使用 [Gin](https://github.com/gin-gonic/gin) 路由
-- 中间件使用 [Gin](https://github.com/gin-gonic/gin) 框架的中间件
-- 数据库组件 [GORM](https://github.com/jinzhu/gorm)
-- 文档使用 [Swagger](https://swagger.io/) 生成
-- 配置文件解析库 [Viper](https://github.com/spf13/viper)
-- 使用 [JWT](https://jwt.io/) 进行身份鉴权认证
-- 校验器使用 [validator](https://github.com/go-playground/validator)  也是 Gin 框架默认的校验器
-- 任务调度 [cron](https://github.com/robfig/cron)
-- 包管理工具 [Go Modules](https://github.com/golang/go/wiki/Modules)
-- 测试框架 [GoConvey](http://goconvey.co/)
-- CI/CD [GitHub Actions](https://github.com/actions)
-- 使用 [GolangCI-lint](https://golangci.com/) 进行代码检测
-- 使用 make 来管理 Go 工程
-- 使用 shell(admin.sh) 脚本来管理进程
-- 使用 YAML 文件进行多环境配置
+[![Leagle Layout Arch](https://raw.githubusercontent.com/go-eagle/eagle/master/docs/images/eagle-layout-arch.png)](https://starchart.cc/go-eagle/eagle)
 
-## 📗 目录结构
+## Directory Structure
 
 ```shell
-├── Makefile                     # 项目管理文件
-├── api                          # grpc客户端和Swagger 文档
-├── build                        # 编译目录
-├── cmd                          # 脚手架目录
-├── config                       # 配置文件统一存放目录
-├── docs                         # 框架相关文档
-├── internal                     # 业务目录
-│   ├── cache                    # 基于业务封装的cache
-│   ├── handler                  # http 接口
-│   ├── middleware               # 自定义中间件
-│   ├── model                    # 数据库 model
-│   ├── dao                      # 数据访问层
-│   ├── ecode                    # 业务自定义错误码
-│   ├── routers                  # 业务路由
-│   ├── server                   # http server 和 grpc server
-│   └── service                  # 业务逻辑层
-├── logs                         # 存放日志的目录
-├── main.go                      # 项目入口文件
-├── pkg                          # 公共的 package
-├── test                         # 单元测试依赖的配置文件，主要是供docker使用的一些环境配置文件
-└── scripts                      # 存放用于执行各种构建，安装，分析等操作的脚本
+├── Makefile                     
+├── api                          
+├── cmd                          
+├── config                       
+├── docs                         
+├── internal                     
+│   ├── cache                    
+│   ├── handler                  
+│   ├── middleware               
+│   ├── model                    
+│   ├── dao                      
+│   ├── ecode                    
+│   ├── routers                  
+│   ├── server                   
+│   └── service                  
+├── logs                         
+├── main.go                      
+├── pkg                          
+├── test                         
+└── scripts                      
 ```
 
-## 🛠️ 快速开始
-
-### 方式一
-
-直接Clone项目的方式，文件比较全
-
-TIPS: 需要本地安装MySQL数据库和 Redis
+## Installtion CLI
 
 ```bash
-# 下载安装，可以不用是 GOPATH
-git clone https://github.com/1024casts/snake
+GOPROXY="https://goproxy.cn,direct"
 
-# 进入到下载目录
-cd snake
+# go >= 1.16
+go install github.com/go-eagle/eagle/cmd/eagle@latest
 
-# 生成环境配置文件
-cd config
-cp config.yaml config.{ENV}.yaml
-
-# 编译
-make build
-
-# 运行
-./scripts/admin.sh start
+# go < 1.16
+go get github.com/go-eagle/eagle/cmd/eagle
 ```
 
-### 方式二
-
-使用脚手架，仅生成基本目录, 不包含pkg等部分公共模块目录
+## Quick Start
 
 ```bash
-# 下载
-go get github.com/1024casts/snake/cmd/snake
+# gen a server with http and gRPC
+eagle new eagle-demo
+# or 
+eagle new github.com/foo/eagle-demo
 
-export GO111MODULE=on
-# 或者在.bashrc 或 .zshrc中加入
-# source .bashrc 或 source .zshrc
+# install dependence
+go mod tidy
 
-# 使用
-snake new snake-demo 
-# 或者 
-snake new github.com/foo/bar
+# run
+make run
 ```
 
-## 💻 常用命令
+## Documentation
 
-- make help 查看帮助
-- make dep 下载 Go 依赖包
-- make build 编译项目
-- make gen-docs 生成接口文档
-- make test-coverage 生成测试覆盖
-- make lint 检查代码规范
+[https://go-eagle.org/](https://go-eagle.org/)
 
-## 🏂 模块
+## CHANGELOG
 
-## 公共模块
+- [CHANGELOG](https://github.com/go-eagle/eagle/blob/master/CHANGELOG.md)
 
-- 图片上传(支持本地、七牛)
-- 短信验证码(支持七牛)
+## Who is using
 
-### 用户模块
-
-- 注册
-- 登录(邮箱登录，手机登录)
-- 发送手机验证码(使用七牛云服务)
-- 更新用户信息
-- 关注/取消关注
-- 关注列表
-- 粉丝列表
-
-## 📝 接口文档
-
-`http://localhost:8080/swagger/index.html`
-
-## 开发规范
-
-遵循: [Uber Go 语言编码规范](https://github.com/uber-go/guide/blob/master/style.md)
-
-## 📖 开发规约
-
-- [配置说明](https://github.com/1024casts/snake/blob/master/conf)
-- [错误码设计](https://github.com/1024casts/snake/tree/master/pkg/errno)
-- [service 的使用规则](https://github.com/1024casts/snake/blob/master/internal/service)
-- [repository 的使用规则](https://github.com/1024casts/snake/blob/master/internal/repository)
-- [cache 使用说明](https://github.com/1024casts/snake/blob/master/pkg/cache)
-
-## 🚀 部署
-
-### 单独部署
-
-上传到服务器后，直接运行命令即可
-
-```bash
-./scripts/admin.sh start
-```
-
-### Docker 部署
-
-如果安装了 Docker 可以通过下面命令启动应用：
-
-```bash
-# 运行
-docker-compose up -d
-
-# 验证
-http://127.0.0.1/health
-```
-
-### Supervisord
-
-编译并生成二进制文件
-
-```bash
-go build -o bin_snake
-```
-
-如果应用有多台机器，可以在编译机器进行编译，然后使用rsync同步到对应的业务应用服务器
-
-> 以下内容可以整理为脚本
-
-```bash
-export GOROOT=/usr/local/go1.13.8
-export GOPATH=/data/build/test/src
-export GO111MODULE=on
-cd /data/build/test/src/github.com/1024casts/snake
-/usr/local/go1.13.8/bin/go build -o /data/build/bin/bin_snake -mod vendor main.go
-rsync -av /data/build/bin/ x.x.x.x:/home/go/snake
-supervisorctl restart snake
-```
-
-这里日志目录设定为 `/data/log`
-如果安装了 Supervisord，可以在配置文件中添加下面内容(默认：`/etc/supervisor/supervisord.conf`)：
-
-```ini
-[program:snake]
-# environment=
-directory=/home/go/snake
-command=/home/go/snake/bin_snake
-autostart=true
-autorestart=true
-user=root
-stdout_logfile=/data/log/snake_std.log
-startsecs = 2
-startretries = 2
-stdout_logfile_maxbytes=10MB
-stdout_logfile_backups=10
-stderr_logfile=/data/log/snake_err.log
-stderr_logfile_maxbytes=10MB
-stderr_logfile_backups=10
-```
-
-重启 Supervisord
-
-```bash
-supervisorctl restart snake
-```
-
-## 📜 CHANGELOG
-
-- [更新日志](https://github.com/1024casts/snake/blob/master/CHANGELOG.md)
-
-## 🏘️ 谁在用
-
-- [1024课堂](https://1024casts.com)
+- [1024casts](https://1024casts.com)
 - [FastIM](https://github.com/1024casts/fastim)
+- [Go-microservice](https://github.com/go-microservice)
 
-## 💬 Discussion
+## Discussion
 
-- Issue: https://github.com/1024casts/snake/issues
-- QQ交流群：1074476202
+- Issue: https://github.com/go-eagle/eagle/issues
+- Discord: https://discord.com/channels/968369660900814869
 
-## 🔋 JetBrains 开源证书支持
+## Microservice Roadmap
 
-`snake` 项目一直以来都是在 JetBrains 公司旗下的 GoLand 集成开发环境中进行开发，基于 **free JetBrains Open Source license(s)** 正版免费授权，在此表达我的谢意。
+![Microservice-roadmap](https://github.com/go-eagle/eagle/assets/3043638/c7ef237e-e0f9-4699-843d-54588b2bcec8)
 
-<a href="https://www.jetbrains.com/?from=1024casts/snake" target="_blank"><img src="https://raw.githubusercontent.com/panjf2000/illustrations/master/jetbrains/jetbrains-variant-4.png" width="200" align="middle"/></a>
+## Contributing
 
-## 📄 License
+If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement". Don't forget to give the project a star! Thanks again!
+
+- Fork the repository to your own GitHub account.
+- Create a new branch for your changes.
+- Make your changes to the code.
+- Commit your changes and push the branch to your forked repository.
+- Open a pull request on our repository.
+
+## Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/go-eagle/eagle.svg)](https://starchart.cc/go-eagle/eagle)
+
+## License
 
 MIT. See the [LICENSE](LICENSE) file for details.

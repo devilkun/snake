@@ -6,6 +6,15 @@ import (
 	"time"
 )
 
+const (
+	// DateTime date time layout
+	DateTime = "2006-01-02 15:04:05"
+	// DateOnly date layout
+	DateOnly = "2006-01-02"
+	// TimeOnly time layout
+	TimeOnly = "15:04:05"
+)
+
 // GetDate 获取字符串日期
 func GetDate() string {
 	return time.Now().Format("2006/01/02")
@@ -23,7 +32,7 @@ func GetTodayDateInt() int {
 
 // TimeLayout 常用日期格式化模板
 func TimeLayout() string {
-	return "2006-01-02 15:04:05"
+	return DateTime
 }
 
 // TimeToString 时间转字符串
