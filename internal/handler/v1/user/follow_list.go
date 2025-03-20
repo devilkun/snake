@@ -1,18 +1,14 @@
 package user
 
 import (
-	"context"
 	"strconv"
-
-	"github.com/1024casts/snake/internal/service"
-
-	"github.com/1024casts/snake/internal/ecode"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/1024casts/snake/api"
-	"github.com/1024casts/snake/pkg/errno"
-	"github.com/1024casts/snake/pkg/log"
+	"github.com/go-eagle/eagle/internal/ecode"
+	"github.com/go-eagle/eagle/internal/service"
+	"github.com/go-eagle/eagle/pkg/errcode"
+	"github.com/go-eagle/eagle/pkg/log"
 )
 
 // FollowList 关注列表
@@ -25,54 +21,83 @@ import (
 // @Success 200 {object} model.UserInfo "用户信息"
 // @Router /users/{id}/following [get]
 func FollowList(c *gin.Context) {
-	userIDStr := c.Param("id")
-	userID, _ := strconv.Atoi(userIDStr)
+	// get the underlying request context
+	ctx := c.Request.Context()
 
-	curUserID := api.GetUserID(c)
-	log.Infof("cur uid: %d", curUserID)
+	// create a done channel to tell the request it's done
+	doneChan := make(chan ListResponse)
+	// create a err channel
+	errChan := make(chan error)
 
-	_, err := service.UserSvc.GetUserByID(c, uint64(userID))
-	if err != nil {
-		api.SendResponse(c, ecode.ErrUserNotFound, nil)
+	// here you put the actual work needed for the request
+	// and then send the doneChan with the status and body
+	// to finish the request by writing the response
+	go func() {
+		userIDStr := c.Param("id")
+		userID, _ := strconv.Atoi(userIDStr)
+
+		curUserID := service.GetUserID(c)
+		log.Infof("cur uid: %d", curUserID)
+
+		_, err := service.Svc.Users().GetUserByID(ctx, uint64(userID))
+		if err != nil {
+			errChan <- ecode.ErrUserNotFound
+			return
+		}
+
+		lastIDStr := c.DefaultQuery("last_id", "0")
+		lastID, _ := strconv.Atoi(lastIDStr)
+		limit := 10
+
+		userFollowList, err := service.Svc.Relations().GetFollowingUserList(ctx, uint64(userID), uint64(lastID), limit+1)
+		if err != nil {
+			log.Warnf("get following user list err: %+v", err)
+			errChan <- errcode.ErrInternalServer
+			return
+		}
+
+		hasMore := 0
+		pageValue := lastID
+		if len(userFollowList) > limit {
+			hasMore = 1
+			userFollowList = userFollowList[0 : len(userFollowList)-1]
+			pageValue = lastID + 1
+		}
+
+		var userIDs []uint64
+		for _, v := range userFollowList {
+			userIDs = append(userIDs, v.FollowedUID)
+		}
+
+		userOutList, err := service.Svc.Users().BatchGetUsers(ctx, curUserID, userIDs)
+		if err != nil {
+			log.Warnf("batch get users err: %v", err)
+			errChan <- errcode.ErrInternalServer
+			return
+		}
+
+		doneChan <- ListResponse{
+			TotalCount: 0,
+			HasMore:    hasMore,
+			PageKey:    "last_id",
+			PageValue:  pageValue,
+			Items:      userOutList,
+		}
+	}()
+
+	// non-blocking select on two channels see if the request
+	// times out or finishes
+	select {
+	// if the context is done it timed out or was canceled
+	// so don't return anything
+	case <-ctx.Done():
 		return
+	// if err is not nil return error response
+	case err := <-errChan:
+		response.Error(c, err)
+	// if the request finished then finish the request by
+	// writing the response
+	case resp := <-doneChan:
+		response.Success(c, resp)
 	}
-
-	lastIDStr := c.DefaultQuery("last_id", "0")
-	lastID, _ := strconv.Atoi(lastIDStr)
-	limit := 10
-
-	userFollowList, err := service.UserSvc.GetFollowingUserList(context.TODO(), uint64(userID), uint64(lastID), limit+1)
-	if err != nil {
-		log.Warnf("get following user list err: %+v", err)
-		response.Error(c, errno.ErrInternalServerError)
-		return
-	}
-
-	hasMore := 0
-	pageValue := lastID
-	if len(userFollowList) > limit {
-		hasMore = 1
-		userFollowList = userFollowList[0 : len(userFollowList)-1]
-		pageValue = lastID + 1
-	}
-
-	var userIDs []uint64
-	for _, v := range userFollowList {
-		userIDs = append(userIDs, v.FollowedUID)
-	}
-
-	userOutList, err := service.UserSvc.BatchGetUsers(context.TODO(), curUserID, userIDs)
-	if err != nil {
-		log.Warnf("batch get users err: %v", err)
-		response.Error(c, errno.ErrInternalServerError)
-		return
-	}
-
-	response.Success(c, ListResponse{
-		TotalCount: 0,
-		HasMore:    hasMore,
-		PageKey:    "last_id",
-		PageValue:  pageValue,
-		Items:      userOutList,
-	})
 }

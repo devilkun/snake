@@ -1,11 +1,12 @@
 package sql
 
 import (
-	"github.com/1024casts/snake/pkg/metric"
+	"github.com/go-eagle/eagle/pkg/metric"
 )
 
 const namespace = "mysql_client"
 
+// nolint
 var (
 	_metricReqDur = metric.NewHistogramVec(&metric.HistogramVecOpts{
 		Namespace: namespace,

@@ -5,8 +5,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/1024casts/snake/internal/model"
-	"github.com/1024casts/snake/pkg/log"
+	"github.com/go-eagle/eagle/internal/model"
+	"github.com/go-eagle/eagle/internal/repository"
+	"github.com/go-eagle/eagle/pkg/log"
 )
 
 const (
@@ -16,10 +17,30 @@ const (
 	FollowStatusDelete = 0 // 删除
 )
 
+// RelationService .
+type RelationService interface {
+	Follow(ctx context.Context, userID uint64, followedUID uint64) error
+	Unfollow(ctx context.Context, userID uint64, followedUID uint64) error
+	IsFollowing(ctx context.Context, userID uint64, followedUID uint64) bool
+	GetFollowingUserList(ctx context.Context, userID uint64, lastID uint64, limit int) ([]*model.UserFollowModel, error)
+	GetFollowerUserList(ctx context.Context, userID uint64, lastID uint64, limit int) ([]*model.UserFansModel, error)
+}
+
+type relationService struct {
+	repo repository.Repository
+}
+
+var _ RelationService = (*relationService)(nil)
+
+func newRelations(svc *service) *relationService {
+	return &relationService{repo: svc.repo}
+}
+
 // IsFollowing 是否正在关注某用户
-func (s *Service) IsFollowing(ctx context.Context, userID uint64, followedUID uint64) bool {
+func (s *relationService) IsFollowing(ctx context.Context, userID uint64, followedUID uint64) bool {
 	userFollowModel := &model.UserFollowModel{}
-	result := model.GetDB().
+	db, _ := model.GetDB()
+	result := db.
 		Where("user_id=? AND followed_uid=? ", userID, followedUID).
 		Find(userFollowModel)
 
@@ -36,8 +57,8 @@ func (s *Service) IsFollowing(ctx context.Context, userID uint64, followedUID ui
 }
 
 // Follow 关注目标用户
-func (s *Service) Follow(ctx context.Context, userID uint64, followedUID uint64) error {
-	db := model.GetDB()
+func (s *relationService) Follow(ctx context.Context, userID uint64, followedUID uint64) error {
+	db, _ := model.GetDB()
 	tx := db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -46,28 +67,28 @@ func (s *Service) Follow(ctx context.Context, userID uint64, followedUID uint64)
 	}()
 
 	// 添加到关注表
-	err := s.dao.CreateUserFollow(ctx, tx, userID, followedUID)
+	err := s.repo.CreateUserFollow(ctx, tx, userID, followedUID)
 	if err != nil {
 		tx.Rollback()
 		return errors.Wrap(err, "insert into user follow err")
 	}
 
 	// 添加到粉丝表
-	err = s.dao.CreateUserFans(ctx, tx, followedUID, userID)
+	err = s.repo.CreateUserFans(ctx, tx, followedUID, userID)
 	if err != nil {
 		tx.Rollback()
 		return errors.Wrap(err, "insert into user fans err")
 	}
 
 	// 添加关注数
-	err = s.dao.IncrFollowCount(ctx, tx, userID, 1)
+	err = s.repo.IncrFollowCount(ctx, tx, userID, 1)
 	if err != nil {
 		tx.Rollback()
 		return errors.Wrap(err, "update user follow count err")
 	}
 
 	// 添加粉丝数
-	err = s.dao.IncrFollowerCount(ctx, tx, followedUID, 1)
+	err = s.repo.IncrFollowerCount(ctx, tx, followedUID, 1)
 	if err != nil {
 		return errors.Wrap(err, "update user fans count err")
 	}
@@ -82,8 +103,8 @@ func (s *Service) Follow(ctx context.Context, userID uint64, followedUID uint64)
 }
 
 // Unfollow 取消用户关注
-func (s *Service) Unfollow(ctx context.Context, userID uint64, followedUID uint64) error {
-	db := model.GetDB()
+func (s *relationService) Unfollow(ctx context.Context, userID uint64, followedUID uint64) error {
+	db, _ := model.GetDB()
 	tx := db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -92,28 +113,28 @@ func (s *Service) Unfollow(ctx context.Context, userID uint64, followedUID uint6
 	}()
 
 	// 删除关注
-	err := s.dao.UpdateUserFollowStatus(ctx, tx, userID, followedUID, FollowStatusDelete)
+	err := s.repo.UpdateUserFollowStatus(ctx, tx, userID, followedUID, FollowStatusDelete)
 	if err != nil {
 		tx.Rollback()
 		return errors.Wrap(err, "update user follow err")
 	}
 
 	// 删除粉丝
-	err = s.dao.UpdateUserFansStatus(ctx, tx, followedUID, userID, FollowStatusDelete)
+	err = s.repo.UpdateUserFansStatus(ctx, tx, followedUID, userID, FollowStatusDelete)
 	if err != nil {
 		tx.Rollback()
 		return errors.Wrap(err, "update user follow err")
 	}
 
 	// 减少关注数
-	err = s.dao.IncrFollowCount(ctx, tx, userID, -1)
+	err = s.repo.IncrFollowCount(ctx, tx, userID, -1)
 	if err != nil {
 		tx.Rollback()
 		return errors.Wrap(err, "update user follow count err")
 	}
 
 	// 减少粉丝数
-	err = s.dao.IncrFollowerCount(ctx, tx, followedUID, -1)
+	err = s.repo.IncrFollowerCount(ctx, tx, followedUID, -1)
 	if err != nil {
 		tx.Rollback()
 		return errors.Wrap(err, "update user fans count err")
@@ -129,11 +150,11 @@ func (s *Service) Unfollow(ctx context.Context, userID uint64, followedUID uint6
 }
 
 // GetFollowingUserList 获取正在关注的用户列表
-func (s *Service) GetFollowingUserList(ctx context.Context, userID uint64, lastID uint64, limit int) ([]*model.UserFollowModel, error) {
+func (s *relationService) GetFollowingUserList(ctx context.Context, userID uint64, lastID uint64, limit int) ([]*model.UserFollowModel, error) {
 	if lastID == 0 {
 		lastID = MaxID
 	}
-	userFollowList, err := s.dao.GetFollowingUserList(ctx, userID, lastID, limit)
+	userFollowList, err := s.repo.GetFollowingUserList(ctx, userID, lastID, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -142,11 +163,11 @@ func (s *Service) GetFollowingUserList(ctx context.Context, userID uint64, lastI
 }
 
 // GetFollowerUserList 获取粉丝用户列表
-func (s *Service) GetFollowerUserList(ctx context.Context, userID uint64, lastID uint64, limit int) ([]*model.UserFansModel, error) {
+func (s *relationService) GetFollowerUserList(ctx context.Context, userID uint64, lastID uint64, limit int) ([]*model.UserFansModel, error) {
 	if lastID == 0 {
 		lastID = MaxID
 	}
-	userFollowerList, err := s.dao.GetFollowerUserList(ctx, userID, lastID, limit)
+	userFollowerList, err := s.repo.GetFollowerUserList(ctx, userID, lastID, limit)
 	if err != nil {
 		return nil, err
 	}

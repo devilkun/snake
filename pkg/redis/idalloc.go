@@ -1,18 +1,19 @@
 package redis
 
 import (
+	"context"
 	"strconv"
 	"strings"
 
-	"github.com/go-redis/redis"
 	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
 
-	"github.com/1024casts/snake/pkg/log"
+	"github.com/go-eagle/eagle/pkg/log"
 )
 
 // IDAlloc id生成器
 // key 为业务key, 由业务前缀+功能前缀+具体场景id组成
-// 比如生成用户id, 可以传入user_id， 完整示例: snake:idalloc:user_id
+// 比如生成用户id, 可以传入user_id， 完整示例: eagle:idalloc:user_id
 type IDAlloc struct {
 	// redis 实例，最好使用和业务独立的实例，最好可以部署集群，让 id alloc做到高可用
 	redisClient *redis.Client
@@ -28,7 +29,7 @@ func NewIDAlloc(conn *redis.Client) *IDAlloc {
 // GetNewID 生成id
 func (ia *IDAlloc) GetNewID(key string, step int64) (int64, error) {
 	key = ia.GetKey(key)
-	id, err := ia.redisClient.IncrBy(key, step).Result()
+	id, err := ia.redisClient.IncrBy(context.Background(), key, step).Result()
 	if err != nil {
 		return 0, errors.Wrapf(err, "redis incr err, key: %s", key)
 	}
@@ -43,7 +44,7 @@ func (ia *IDAlloc) GetNewID(key string, step int64) (int64, error) {
 // GetCurrentID 获取当前id
 func (ia *IDAlloc) GetCurrentID(key string) (int64, error) {
 	key = ia.GetKey(key)
-	ret, err := ia.redisClient.Get(key).Result()
+	ret, err := ia.redisClient.Get(context.Background(), key).Result()
 	if err != nil {
 		return 0, errors.Wrapf(err, "redis get err, key: %s", key)
 	}

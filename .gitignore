@@ -38,9 +38,9 @@ cover.out
 .idea
 .idea/*
 bin/
+.DS_Store
 
 vendor
 
 # custom
-snake
-config/config.yaml
+eagle

@@ -1,19 +1,32 @@
 package redis
 
 import (
+	"context"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestInitTestRedis(t *testing.T) {
+func TestInit(t *testing.T) {
 	InitTestRedis()
 
-	err := RedisClient.Ping().Err()
-	if err != nil {
-		t.Error("ping redis server err: ", err)
-		return
-	}
-	t.Log("ping redis server pass")
+	// test init
+	ret, err := RedisClient.Ping(context.Background()).Result()
+	assert.Nil(t, err)
+	assert.Equal(t, "PONG", ret)
+}
+
+func TestNewRedisClient(t *testing.T) {
+	// test default client
+	InitTestRedis()
+	client := NewRedisManager()
+	assert.NotNil(t, client)
+
+	// get a not exist client
+	// rdb, err := client.GetClient("not-exist")
+	// assert.NotNil(t, err)
+	// assert.Nil(t, rdb)
 }
 
 func TestRedisSetGet(t *testing.T) {
@@ -21,14 +34,8 @@ func TestRedisSetGet(t *testing.T) {
 
 	var setGetKey = "test-set"
 	var setGetValue = "test-content"
-	RedisClient.Set(setGetKey, setGetValue, time.Second*100)
+	RedisClient.Set(context.Background(), setGetKey, setGetValue, time.Second*100)
 
-	expectValue := RedisClient.Get(setGetKey).Val()
-	if setGetValue != expectValue {
-		t.Log("original value: ", setGetValue)
-		t.Log("expect value: ", expectValue)
-		return
-	}
-
-	t.Log("redis set get test pass")
+	expectValue := RedisClient.Get(context.Background(), setGetKey).Val()
+	assert.Equal(t, setGetValue, expectValue)
 }

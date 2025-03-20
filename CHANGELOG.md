@@ -1,8 +1,78 @@
-## Changelog
+# Changelog
+
+## v1.10.0
+
+- feat: support async flush log to disk
+- feat: add re-entry and automatic renewal for redis lock
+- feat: add gorm logger
+- chore: using gorm offical plguin for tracing and metrics
+- chore: optimize zap log level
+- chore: improve cmd[new]
+
+## v1.9.0
+
+- feat: support clickhouse
+- chore: upgrade go to v1.22.3
+- chore: optimize log and orm
+
+## v1.8.2
+- feat: support PostgreSQL
+- feat: support config multiple databases
+- chore(cli): generate project by adding branch name, default is http server
+- chore(db): add timeout for connect, read and write
+- chore(ci): upgrade goreleaser to v2
+
+## v1.8.1
+- fix: GitHub workflow badge URL
+- chore: improve cmd[run/new]
+- chore: improve print log for crontab
+- chore: update config in logger.yaml
+- chore: upgrade go to v1.19
+
+## v1.8.0
+- feat(es): add elasticsearch client(v7)
+- feat: support custom filename when init log
+- feat: add crontab server and example
+- refactor: improve RabbitMQ client
+- chore(cli): improve gen task command
+- chore(response): remove init resp and improve Error
+- chore: improve redis queue and add example
+- chore: improve cmd: new and run
+
+## v1.7.0
+- feat(http): can custom http status
+- feat(util): add util for printing stack
+- feat(grpc): add tracing and keepalive for grpc client
+- feat(trace): add function trace 
+- chore(auth): support ignore path for auth middleware
+- chore(cli): approve gen gin and proto command
+- chore(lock): approve etcd lock
+
+## v1.6.0
+- add(cli): gen model
+- add(cli): add gen handler cmd
+- feat: add more option for server and client
+
+## v1.5.0
+- add: cache, repo, service cmd
+- add: grpc error
+- optimize: proto cmd
+
+## v1.4.0
+- 新增 run,proto,protoc-gen-go-gin 命令工具
+- 新增 服务注册
+- 新增 examples
+- 优化 replace OpenTracing with OpenTelemetry
+- 优化 add trace for http client and sql
 
 ## v1.3.1
-- 优化 新建项目命令 `snake new`
-- 优化目录结构
+- 优化 新建项目命令 `eagle new`
+- 优化 目录结构
+- 新增 链路追踪 tracing 支持 jaeger、zipkin、elastic
+- 新增 SQL库，支持 tracing
+- 新增 工具链，可以自动生成对应的 cache 文件
+- 升级 go-redis到v8.10.0版本
+- 升级 gin到v1.7.2版本
 
 ## v1.3.0
 - 新增 Web 路由、控制器及模板
@@ -18,7 +88,7 @@
 - 优化 graceful stop 方法
 - 优化 token sign 方法支持自定义参数payload
 - 优化 redis lock, 将token收敛到包内进行处理，减少使用的心智负担
-- 优化 创建项目命令 `snake new`
+- 优化 创建项目命令 `eagle new`
 - 优化 移除cache prefix, 由用户自己定义
 - 优化 数据获取，使用 singleflight，防止缓存击穿
 - 优化 数据为空时缓存一分钟，防止缓存穿透
@@ -33,7 +103,7 @@
 ## v1.2.1
 - 新增 增加job目录，可以在 `cmd/job` 中定义具体任务
 - 优化 http client, 支持原生(raw)包方式请求和第三方库resty
-- 优化 snake new 命令，使用新的 main.go 文件
+- 优化 eagle new 命令，使用新的 main.go 文件
 - 优化 `service` 和 `repository` 公共方法增加首个参数 `ctx Context.context`
 - 优化 修改目录 `pkg/util` 为 `pkg/utils`
 

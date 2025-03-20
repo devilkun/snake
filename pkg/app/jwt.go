@@ -8,10 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-
-	"github.com/1024casts/snake/pkg/conf"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 var (
@@ -61,7 +59,7 @@ func ParseRequest(c *gin.Context) (*Payload, error) {
 	header := c.Request.Header.Get("Authorization")
 
 	// Load the jwt secret from config
-	secret := conf.Conf.App.JwtSecret
+	secret := Conf.JwtSecret
 
 	if len(header) == 0 {
 		return &Payload{}, ErrMissingHeader

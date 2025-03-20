@@ -1,15 +1,18 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"strconv"
 	"time"
 
+	"github.com/go-eagle/eagle/internal/repository"
+
 	"github.com/pkg/errors"
 
-	"github.com/1024casts/snake/pkg/log"
-	"github.com/1024casts/snake/pkg/redis"
+	"github.com/go-eagle/eagle/pkg/log"
+	"github.com/go-eagle/eagle/pkg/redis"
 )
 
 // 验证码服务，主要提供生成验证码和获取验证码
@@ -19,15 +22,32 @@ const (
 	maxDurationTime    = 10 * time.Minute     // 验证码有效期
 )
 
+// VCodeService define interface func
+type VCodeService interface {
+	GenLoginVCode(phone string) (int, error)
+	CheckLoginVCode(phone int64, vCode int) bool
+	GetLoginVCode(phone int64) (int, error)
+}
+
+type vcodeService struct {
+	repo repository.Repository
+}
+
+var _ VCodeService = (*vcodeService)(nil)
+
+func newVCode(svc *service) *vcodeService {
+	return &vcodeService{repo: svc.repo}
+}
+
 // GenLoginVCode 生成校验码
-func (s *Service) GenLoginVCode(phone string) (int, error) {
+func (s *vcodeService) GenLoginVCode(phone string) (int, error) {
 	// step1: 生成随机数
 	vCodeStr := fmt.Sprintf("%06v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(1000000))
 
 	// step2: 写入到redis里
 	// 使用set, key使用前缀+手机号 缓存10分钟）
 	key := fmt.Sprintf("app:login:vcode:%s", phone)
-	err := redis.RedisClient.Set(key, vCodeStr, maxDurationTime).Err()
+	err := redis.RedisClient.Set(context.Background(), key, vCodeStr, maxDurationTime).Err()
 	if err != nil {
 		return 0, errors.Wrap(err, "gen login code from redis set err")
 	}
@@ -56,7 +76,7 @@ func isTestPhone(phone int64) bool {
 }
 
 // CheckLoginVCode 验证校验码是否正确
-func (s *Service) CheckLoginVCode(phone int64, vCode int) bool {
+func (s *vcodeService) CheckLoginVCode(phone int64, vCode int) bool {
 	if isTestPhone(phone) {
 		return true
 	}
@@ -75,10 +95,10 @@ func (s *Service) CheckLoginVCode(phone int64, vCode int) bool {
 }
 
 // GetLoginVCode 获得校验码
-func (s *Service) GetLoginVCode(phone int64) (int, error) {
+func (s *vcodeService) GetLoginVCode(phone int64) (int, error) {
 	// 直接从redis里获取
 	key := fmt.Sprintf(verifyCodeRedisKey, phone)
-	vcode, err := redis.RedisClient.Get(key).Result()
+	vcode, err := redis.RedisClient.Get(context.Background(), key).Result()
 	if err == redis.ErrRedisNotFound {
 		return 0, nil
 	} else if err != nil {

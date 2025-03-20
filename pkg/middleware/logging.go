@@ -3,16 +3,16 @@ package middleware
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"regexp"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/willf/pad"
 
-	"github.com/1024casts/snake/pkg/app"
-	"github.com/1024casts/snake/pkg/errno"
-	"github.com/1024casts/snake/pkg/log"
+	"github.com/go-eagle/eagle/pkg/app"
+	"github.com/go-eagle/eagle/pkg/errcode"
+	"github.com/go-eagle/eagle/pkg/log"
 )
 
 type bodyLogWriter struct {
@@ -39,11 +39,11 @@ func Logging() gin.HandlerFunc {
 		// Read the Body content
 		var bodyBytes []byte
 		if c.Request.Body != nil {
-			bodyBytes, _ = ioutil.ReadAll(c.Request.Body)
+			bodyBytes, _ = io.ReadAll(c.Request.Body)
 		}
 
 		// Restore the io.ReadCloser to its original state
-		c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+		c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 		// The basic informations.
 		method := c.Request.Method
@@ -71,13 +71,14 @@ func Logging() gin.HandlerFunc {
 		if err := json.Unmarshal(blw.body.Bytes(), &response); err != nil {
 			log.Errorf("response body can not unmarshal to model.Response struct, body: `%s`, err: %+v",
 				blw.body.Bytes(), err)
-			code = errno.ErrInternalServerError.Code()
+			code = errcode.ErrInternalServer.Code()
 			message = err.Error()
 		} else {
 			code = response.Code
 			message = response.Message
 		}
 
+		// nolint: typecheck
 		log.Infof("%-13s | %-12s | %s %s | %d | {code: %d, message: %s}", latency, ip,
 			pad.Right(method, 5, ""), path, blw.Status(), code, message)
 	}

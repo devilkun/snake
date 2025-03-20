@@ -4,26 +4,28 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-eagle/eagle/pkg/app"
+
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
-	"github.com/1024casts/snake/api"
-	"github.com/1024casts/snake/pkg/errno"
-	"github.com/1024casts/snake/pkg/sign"
+	"github.com/go-eagle/eagle/pkg/errcode"
+	"github.com/go-eagle/eagle/pkg/sign"
 )
 
 // SignMd5Middleware md5 签名校验中间件
 func SignMd5Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sn, err := verifySign(c)
+		response := app.NewResponse()
 		if err != nil {
-			api.SendResponse(c, errno.ErrInternalServerError, nil)
+			response.Error(c, errcode.ErrInternalServer)
 			c.Abort()
 			return
 		}
 
 		if sn != nil {
-			api.SendResponse(c, errno.ErrSignParam, sn)
+			response.Error(c, errcode.ErrSignParam)
 			c.Abort()
 			return
 		}
